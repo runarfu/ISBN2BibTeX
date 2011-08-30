@@ -23,6 +23,13 @@ def findAtOttobib(isbn):
     except:
         return None
 
+def findCoverAndDownload(isbn):
+    try:
+        url = 'http://covers.openlibrary.org/b/isbn/' + isbn + '-L.jpg'
+        urllib.urlretrieve(url, isbn + '.jpg')
+    except:
+        print("Couldn't get cover image for isbn=" % isbn)
+
 def inputLoop(outputFile):
     while True:
         try:
@@ -32,6 +39,7 @@ def inputLoop(outputFile):
         result = findAtOttobib(isbn)
         if result:
             print(result)
+            findCoverAndDownload(isbn)
             outputFile.write(result + '\n\n')
         else:
             print('Not found')
