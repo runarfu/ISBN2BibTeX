@@ -3,6 +3,8 @@
 import urllib
 import urllib2
 import sys
+import datetime
+from BeautifulSoup import BeautifulSoup
 
 def findAtOttobib(isbn):
     try:
@@ -30,26 +32,51 @@ def findCoverAndDownload(isbn):
     except:
         print("Couldn't get cover image for isbn=" % isbn)
 
+def getTitleFromWebSite(url):
+    req = urllib2.Request(url)
+    resp = urllib2.urlopen(req)
+    html = resp.read()
+    soup = BeautifulSoup(html)
+    return soup.html.head.title.string
+
+def makeUrlEntry(url):
+    date = datetime.date.today().strftime('%Y-%m-%d')
+    title = getTitleFromWebSite(url)
+    return """@misc{<++>,\n title = {%s},\n author = {},\n howpublished =\
+    \n {\url{%s}},\n note = {Accessed: %s}\n}""" %\
+    (title, url, date)
+
+def makeEntry(query, outputFile):
+    result = None
+    if query.isdigit():
+        result = findAtOttobib(query)
+    elif query.startswith('http'):
+        result = makeUrlEntry(query)
+    if result:
+        print(result)
+        #findCoverAndDownload(query)
+        outputFile.write(result + '\n\n')
+    else:
+        print('Not found')
+
 def inputLoop(outputFile):
     while True:
         try:
-            isbn = raw_input('> ')
+            query = raw_input('> ')
         except:
             break
-        result = findAtOttobib(isbn)
-        if result:
-            print(result)
-            findCoverAndDownload(isbn)
-            outputFile.write(result + '\n\n')
-        else:
-            print('Not found')
+        makeEntry(query, outputFile)
 
-try:
-    f = open(sys.argv[1], 'a')
-except:
-    print('Usage: python isbn2bibtex <FILENAME_TO_APPEND_TO>')
-    sys.exit(1)
-
-inputLoop(f)
-f.close()
+if __name__ == '__main__':
+    try:
+        f = open(sys.argv[1], 'a')
+    except:
+        print('Usage: python isbn2bibtex <FILENAME_TO_APPEND_TO> [<QUERY>]')
+        sys.exit(1)
+        
+    if len(sys.argv) == 3:
+        makeEntry(sys.argv[2], f)
+    else:
+        inputLoop(f)
+    f.close()
 
